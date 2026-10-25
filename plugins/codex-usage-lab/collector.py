@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Read-only local Codex usage dashboard. No credentials or conversation text exported."""
-import json, os, sqlite3, threading, time, subprocess, shutil
+"""Read-only local Codex usage dashboard. No credentials read; bounded user excerpts stay in the local service."""
+import json, os, sqlite3, threading, time, subprocess, shutil, re
 from contextlib import contextmanager
 from pathlib import Path
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
@@ -16,6 +16,15 @@ def cost(u,model):
     r=RATES.get(model)
     if r is None:return None
     return (max(0,u.get('input_tokens',0)-u.get('cached_input_tokens',0))*r[0]+u.get('cached_input_tokens',0)*r[1]+u.get('output_tokens',0)*r[2])/1e6
+
+def message_excerpt(text):
+    """Bounded, literal user text for local recognition; no generated summaries."""
+    if not isinstance(text,str):return ''
+    if '## My request:' in text:text=text.split('## My request:',1)[1]
+    for tag in ('environment_context','in-app-browser-context','external_codex_apps_open_page'):
+        text=re.sub(r'<'+tag+r'\b[^>]*>[\s\S]*?</'+tag+r'>','',text)
+    text=re.sub(r'<image\b[^>]*>[\s\S]*?</image>','[图片]',text)
+    return text.strip()[:1200]
 
 @contextmanager
 def log_stream(path):
@@ -35,7 +44,8 @@ def parse(path):
     result={'records':[],'total':None,'id':None,'cwd':'','timestamp':'','turns':{}}; model=None; tier=None; effort=None; turn=None
     with log_stream(path) as f:
         for line in f:
-            if not any(s in line for s in (b'"session_meta"',b'"turn_context"',b'"token_usage_record"',b'"token_count"',b'"thread_settings_applied"',b'"task_started"',b'"task_complete"')):continue
+            if not any(s in line for s in (b'"session_meta"',b'"turn_context"',b'"token_usage_record"',b'"token_count"',b'"thread_settings_applied"',b'"task_started"',b'"task_complete"',b'"user_message"',b'"response_item"')):continue
+            if b'"response_item"' in line and not re.search(rb'"role"\s*:\s*"user"',line):continue
             try:d=json.loads(line)
             except (ValueError,UnicodeDecodeError):continue
             p=d.get('payload',{}); typ=d.get('type')
@@ -50,7 +60,20 @@ def parse(path):
                 effort=settings.get('reasoning_effort',effort)
             elif typ=='event_msg' and p.get('type') in ('task_started','task_complete'):
                 turn=p.get('turn_id',turn)
-                if turn:result['turns'].setdefault(turn,{})['start' if p['type']=='task_started' else 'end']=d.get('timestamp')
+                if turn:
+                    meta=result['turns'].setdefault(turn,{})
+                    meta['start' if p['type']=='task_started' else 'end']=d.get('timestamp')
+                    if p['type']=='task_started' and 'number' not in meta:meta['number']=len(result['turns'])
+                if p['type']=='task_complete':turn=None
+            elif (typ=='response_item' and p.get('type')=='message' and p.get('role')=='user') or (typ=='event_msg' and p.get('type')=='user_message'):
+                tid=p.get('turn_id') or turn
+                if not tid:continue
+                text=p.get('message') if typ=='event_msg' else '\n'.join(c.get('text','') for c in p.get('content',[]) if c.get('type') in ('input_text','text'))
+                excerpt=message_excerpt(text)
+                if excerpt:
+                    meta=result['turns'].setdefault(tid,{})
+                    old=meta.get('message','')
+                    if excerpt not in old:meta['message']=(old+'\n\n'+excerpt).strip()[:1200]
             elif typ=='token_usage_record':
                 u=p.get('usage');rid=p.get('response_id')
                 if not u or not rid:continue

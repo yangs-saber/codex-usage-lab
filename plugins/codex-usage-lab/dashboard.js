@@ -152,15 +152,11 @@ function render() {
     threads = group(rs, "thread");
   $("total").textContent = compact(total);
   $("total").title = `${fmt(total)} Token`;
-  $("total-sub").textContent = `${fmt(rs.length)} 次模型调用`;
-  $("credits").textContent = credits(rs);
+  $("total-sub").textContent = "输入 + 输出，缓存不重复相加";
+  $("requests").textContent = fmt(rs.length);
   const missing = rs.filter((r) => r.credits == null).length,
     assumed = rs.filter((r) => !r.tierKnown).length;
-  $("pricing-note").textContent = missing
-    ? `${missing} 次调用未计价，非免费`
-    : assumed
-      ? `${assumed} 次按 Standard 估算 · 非账单`
-      : "按记录速度折算 · 非实际扣费";
+  $("pricing-note").textContent = "一次用户消息可能包含多次请求";
   $("cache").textContent = input
     ? `${((100 * cached) / input).toFixed(1)}%`
     : "—";
@@ -321,6 +317,17 @@ function drawTrend(rows, weekStart) {
   $("trend").innerHTML =
     `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(bucketSize > 1 ? `每 ${bucketSize} 天汇总` : "每日")} Token 趋势"><defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>${grid}<polygon class="area" points="${firstX},${H - B} ${points} ${lastX},${H - B}"/><polyline class="chart-line" points="${points}"/>${buckets.map((b, i) => `<circle cx="${x(i)}" cy="${y(b.value)}" r="${buckets.length < 15 ? 3 : 2}" fill="var(--accent)"><title>${b.day}${bucketSize > 1 ? ` 起 ${bucketSize} 天` : ""}：${fmt(b.value)} Token</title></circle>`).join("")}${labels}</svg>`;
 }
+function turnInfo(thread, turn) {
+  return data.turnTimes[thread + ":" + turn] || {};
+}
+function durationLabel(meta) {
+  return meta.start && meta.end
+    ? Math.max(
+        0,
+        Math.round((new Date(meta.end) - new Date(meta.start)) / 1000),
+      ) + " 秒"
+    : "耗时未记录";
+}
 function detail(id, scroll = true) {
   if (selected !== id) {
     activeTurn = null;
@@ -336,28 +343,50 @@ function detail(id, scroll = true) {
   }
   $("detail").hidden = false;
   $("detail-title").textContent = rows[0].title;
-  $("turn-table").innerHTML = table(
-    [
-      "轮次开始 / 任务",
-      "模型 / 调用",
-      "输入（含缓存）",
-      "缓存输入",
-      "输出",
-      "估算 Credits",
-    ],
-    group(rows, "turn")
-      .sort((a, b) => latest(b[1]).localeCompare(latest(a[1])))
-      .map(
-        ([turn, rs]) =>
-          `<tr><td><button class="row-name" data-turn="${esc(turn)}">${date(rs.map((r) => r.time).sort()[0], true)} ↗</button><small>${esc(data.annotations[id + ":" + turn]?.task || "未标注任务")}</small></td><td>${esc([...new Set(rs.map((r) => r.model))].join(" / "))}<small>${rs.length} 次调用</small></td><td class="num">${fmt(sum(rs, "input"))}</td><td class="num">${fmt(sum(rs, "cached"))}</td><td class="num">${fmt(sum(rs, "output"))}</td><td class="num credits-cell">${credits(rs)}</td></tr>`,
-      ),
+  // Retain the expanded panel and unsaved form values while refreshing the list.
+  const expanded = $("calls-panel");
+  $("detail").append(expanded);
+  const allTurns = group(
+    data.records.filter((r) => r.thread === id),
+    "turn",
+  ).sort((a, b) =>
+    a[1]
+      .map((r) => r.time)
+      .sort()[0]
+      .localeCompare(b[1].map((r) => r.time).sort()[0]),
   );
+  const numbers = new Map(allTurns.map(([turn], i) => [turn, i + 1]));
+  $("turn-table").innerHTML = group(rows, "turn")
+    .sort((a, b) => latest(b[1]).localeCompare(latest(a[1])))
+    .map(([turn, rs]) => {
+      const meta = turnInfo(id, turn),
+        number = numbers.get(turn),
+        message = meta.message || "这轮没有可读取的用户消息摘录";
+      const label = message.replace(/\s+/g, " ").slice(0, 110);
+      return `<article class="turn-card ${activeTurn === turn ? "selected" : ""}"><button class="turn-select" data-turn="${esc(turn)}" aria-expanded="${activeTurn === turn}"><span class="turn-number">第 ${number} 轮</span><span class="turn-main"><strong>${esc(label)}</strong><small>${date(meta.start || rs.map((r) => r.time).sort()[0], true)} · ${esc([...new Set(rs.map((r) => r.model))].join(" / "))}</small></span><span class="turn-cost"><strong>${compact(sum(rs, "total"))} Token</strong><small>${durationLabel(meta)} · 约 ${credits(rs)} Credits</small></span><span class="turn-chevron">${activeTurn === turn ? "−" : "+"}</span></button><div data-turn-slot="${esc(turn)}"></div></article>`;
+    })
+    .join("");
+  const slot = [...document.querySelectorAll("[data-turn-slot]")].find(
+    (e) => e.dataset.turnSlot === activeTurn,
+  );
+  if (slot) slot.append(expanded);
+  else expanded.hidden = true;
   if (scroll)
     $("detail").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function calls(turn, reset = true) {
+  if (reset && activeTurn === turn && !$("calls-panel").hidden) {
+    activeTurn = null;
+    $("calls-panel").hidden = true;
+    detail(selected, false);
+    return;
+  }
   activeTurn = turn;
-  if (reset) callLimit = 100;
+  if (reset) {
+    callLimit = 100;
+    detail(selected, false);
+    $("technical-details").open = false;
+  }
   const rows = filtered
     .filter((r) => r.thread === selected && r.turn === turn)
     .sort((a, b) => a.time.localeCompare(b.time));
@@ -377,6 +406,33 @@ function calls(turn, reset = true) {
     timing.start && timing.end
       ? `整轮 ${Math.max(0, Math.round((new Date(timing.end) - new Date(timing.start)) / 1000))} 秒 · 含工具与等待`
       : "起止时间不完整 · 不推算耗时";
+  $("turn-message").textContent =
+    timing.message ||
+    "日志没有保存可辨认的用户消息。这里不会用对话标题或其他轮次的内容代替。";
+  const allTurns = group(
+    data.records.filter((r) => r.thread === selected),
+    "turn",
+  ).sort((a, b) =>
+    a[1]
+      .map((r) => r.time)
+      .sort()[0]
+      .localeCompare(b[1].map((r) => r.time).sort()[0]),
+  );
+  const number = allTurns.findIndex(([id]) => id === turn) + 1;
+  $("selected-turn-title").textContent = `第 ${number} 轮 · 本轮用量`;
+  $("technical-summary").textContent =
+    `技术明细：本轮包含 ${rows.length} 次模型请求`;
+  $("turn-breakdown").innerHTML = [
+    ["本轮总 Token", sum(rows, "total")],
+    ["输入（含缓存）", sum(rows, "input")],
+    ["其中缓存", sum(rows, "cached")],
+    ["输出（含推理）", sum(rows, "output")],
+  ]
+    .map(
+      ([label, value]) =>
+        `<div><span>${label}</span><strong>${fmt(value)}</strong></div>`,
+    )
+    .join("");
   $("calls-panel").hidden = false;
   $("call-table").innerHTML = table(
     [
@@ -396,7 +452,7 @@ function calls(turn, reset = true) {
   );
   $("more-calls").hidden = rows.length <= callLimit;
   if (reset)
-    $("calls-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+    document.querySelector(".turn-card.selected")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function comparison() {
   const groups = group(filtered, (r) =>
@@ -505,6 +561,7 @@ $("close-detail").onclick = () => {
 $("close-calls").onclick = () => {
   activeTurn = null;
   $("calls-panel").hidden = true;
+  if (selected) detail(selected, false);
 };
 $("more-calls").onclick = () => {
   callLimit += 100;

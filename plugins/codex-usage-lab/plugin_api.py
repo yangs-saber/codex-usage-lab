@@ -1,7 +1,7 @@
 import json, os, subprocess, sys, time, urllib.request
 from pathlib import Path
 from dataclasses import dataclass
-__version__='0.4.0'
+__version__='0.5.0'
 ROOT=Path(__file__).resolve().parent
 PORT=int(os.environ.get('USAGE_LAB_PORT','8770'));URL=f'http://127.0.0.1:{PORT}'
 @dataclass

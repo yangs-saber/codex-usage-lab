@@ -6,17 +6,40 @@
 
 ## 能做什么
 
-- **清晰总览**：总 Token、估算 Credits、输入缓存命中率、活跃对话，每 10 秒自动刷新。
+- **清晰总览**：总 Token、模型请求次数、输入缓存命中率、活跃对话，每 10 秒自动刷新。
 - **趋势与构成**：每日趋势、非缓存输入 / 缓存输入 / 输出、项目和模型分布。
-- **逐层追踪**：对话 → 用户轮次 → 模型调用，查看模型、速度、推理强度和用量。
+- **逐层追踪**：对话 → 用户消息摘录与本轮用量 → 默认收起的模型请求技术明细。每轮显示本机记录序号、原文摘录、Token 和耗时；任务标注为可选功能。
 - **同类任务对比**：手动标注任务和结果，比较平均 / 中位 Credits、计价覆盖和样本数。
 - **轻巧界面**：深色 / 浅色、手机布局、时间 / 项目 / 模型筛选、CSV 导出。
 - **Codex 工具**：MCP 查询和可选界面资源。宿主是否显示原生面板取决于客户端支持，不能保证在每个版本中出现。
 - **可选小字条**：`inline/` 中的实验功能，把本轮用量放在「用时」旁边，不占侧栏。
 
-## 快速体验
+## 推荐安装：Codex 插件
 
-需要 Python **3.10+**。网页运行无需 Node 或第三方 Python 包。
+不需要下载或运行 `.command` 文件。可以把仓库链接发给 Codex，让它安装本插件：
+
+> 请从 https://github.com/yangs-saber/codex-usage-lab 安装用量实验室插件。
+
+也可以使用官方 Codex CLI 的插件安装方式：
+
+```sh
+codex plugin marketplace add yangs-saber/codex-usage-lab
+codex plugin add codex-usage-lab@ekko-local-tools
+```
+
+需要本机 Python **3.10+**，压缩 `.jsonl.zst` 历史另需 `zstd`。插件随包提供采集代码、MCP 服务和 Skill；查询时自动启动仅限本机的统计服务，不需要手动维护终端窗口。
+
+安装后开启新聊天，选择用量实验室，说：
+
+- “看看这个对话用了多少 Token。”
+- “哪一轮消耗最多？把我当时发的消息也列出来。”
+- “打开用量看板。”
+
+前两种请求直接在聊天里回答，最后一种才打开页面。原生 MCP 界面资源是否显示取决于宿主支持，不保证每个版本均可用。若插件工具未加载，随包 Skill 可运行 `query.py` 作为后备。单独复制 SKILL.md 不包含采集后端，推荐完整安装插件。
+
+记录来源是本机 `$CODEX_HOME`（默认 `~/.codex`）的逐次用量日志。不会用最近活跃对话冒充当前对话。消息摘录只来自明确关联该轮的用户消息，最多 1,200 字符；缺失时明确显示不可用，不自动生成或猜测摘要。CSV 导出不包含这些新增摘录，但本地 MCP 轮次查询会返回它们。
+
+## 开发者体验 / 独立看板
 
 ```sh
 git clone https://github.com/yangs-saber/codex-usage-lab.git
@@ -24,35 +47,16 @@ cd codex-usage-lab
 python3 run.py --demo
 ```
 
-打开 [演示页面](http://127.0.0.1:8770/?demo=1)。演示服务只加载仓库内的虚构数据，**不扫描本机日志**。
-
-读取真实本机用量：
+打开 [演示页面](http://127.0.0.1:8770/?demo=1)。演示服务只加载虚构数据，**不扫描本机日志**。
 
 ```sh
 python3 run.py
 # 端口被占用时：python3 run.py --port 8771
 ```
 
-打开 [本机看板](http://127.0.0.1:8770/)。首次索引可能需要数十秒。数据库来自 `$CODEX_HOME`（默认 `~/.codex`）；需要本机保存有逐次用量记录。压缩 `.jsonl.zst` 日志另需系统安装 `zstd`。SQLite 字段和事件格式随 Codex 版本变化，未知格式可能不被识别；本项目不是 OpenAI 官方产品。
+打开 [本机看板](http://127.0.0.1:8770/)。首次索引可能需要数十秒。网页运行无需 Node 或第三方 Python 包。SQLite 字段和事件格式随 Codex 版本变化，未知格式可能不被识别；本项目不是 OpenAI 官方产品。
 
-## Codex 插件 / MCP
-
-仓库含本地插件市场清单，可在支持本地插件的 Codex CLI 中安装：
-
-```sh
-codex plugin marketplace add .
-codex plugin add codex-usage-lab@ekko-local-tools
-```
-
-清单使用 `python3` 和 `${PLUGIN_ROOT}`，没有机器专属路径。若当前宿主没有加载插件 MCP 工具，可单独添加：
-
-```sh
-codex mcp add usage_lab_local -- python3 /absolute/path/to/codex-usage-lab/plugins/codex-usage-lab/mcp_server.py
-```
-
-在新聊天中使用用量实验室技能，或调用 `query_usage`（支持 thread / turn / call / model / project / comparison）。`open_usage_dashboard` 声明 MCP App 资源；目前只验证本地 HTTP 看板，客户端内原生资源展示因版本而异。
-
-通过 `/?thread_id=<明确的对话ID>` 可只看一个对话。不会把最近活跃对话冒充当前对话。
+通过 `/?thread_id=<明确的对话ID>` 可只看一个对话。`query_usage` 支持 thread / turn / call / model / project / comparison。若宿主未加载插件 MCP，可单独注册 `mcp_server.py`，详见 Codex CLI 的 `codex mcp add --help`。
 
 ## 可选：回复旁的小字条
 
@@ -72,7 +76,7 @@ codex mcp add usage_lab_local -- python3 /absolute/path/to/codex-usage-lab/plugi
 
 ## 隐私
 
-服务仅监听 `127.0.0.1`，没有上传日志、分析遥测或外部字体。只读 Codex 元数据和用量日志；持久化的唯一业务写入是你主动保存的任务 / 结果标注，默认放在 `~/.local/share/codex-usage-lab`，可用 `USAGE_LAB_DATA` 指定。不会修改原始会话。
+服务仅监听 `127.0.0.1`，没有上传日志、分析遥测或外部字体。只读 Codex 元数据、用量日志和有明确轮次归属的用户消息摘录；持久化的唯一业务写入是你主动保存的任务 / 结果标注，默认放在 `~/.local/share/codex-usage-lab`，可用 `USAGE_LAB_DATA` 指定。不会修改原始会话。
 
 聊天标题、项目名、标注、导出的 CSV 都可能包含私人信息，请勿提交到公开仓库。仓库预览和 `demo.json` 均为虚构数据。不应将本地服务通过隧道暴露到公网。
 

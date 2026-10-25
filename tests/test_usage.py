@@ -46,4 +46,15 @@ class UsageTests(unittest.TestCase):
   with patch.dict('os.environ',{'CODEX_THREAD_ID':'current-chat'}),patch.object(plugin_api,'ensure_service'),patch.object(plugin_api,'http',return_value={'rows':[]}):
    result=plugin_api.KernelApplication().dispatch('open_usage_dashboard',{})
   self.assertEqual(result['thread_id'],'current-chat')
+class TurnMessageTests(unittest.TestCase):
+ parse=UsageTests.parse
+ def test_user_excerpt_attribution(self):
+  def e(t,p):return {'type':t,'timestamp':'2026-10-25T00:00:00Z','payload':p}
+  result=self.parse([e('event_msg',{'type':'task_started','turn_id':'turn1'}),e('response_item',{'type':'message','role':'user','content':[{'type':'input_text','text':'<environment_context>private context</environment_context>\n## My request:\n请优化首页'}]}),e('event_msg',{'type':'user_message','message':'请优化首页'}),e('response_item',{'type':'message','role':'assistant','content':[{'type':'output_text','text':'not user text'}]}),e('event_msg',{'type':'task_complete','turn_id':'turn1'}),e('response_item',{'type':'message','role':'user','content':[{'type':'input_text','text':'unattributed'}]}),e('event_msg',{'type':'task_started','turn_id':'turn2'}),e('event_msg',{'type':'user_message','message':'第二个请求'})])
+  self.assertEqual(result['turns']['turn1']['message'],'请优化首页')
+  self.assertEqual(result['turns']['turn2']['message'],'第二个请求')
+  self.assertNotIn('unattributed',str(result['turns']))
+ def test_excerpt_bound_and_context_only(self):
+  self.assertEqual(collector.message_excerpt('<environment_context>hidden</environment_context>'),'')
+  self.assertEqual(len(collector.message_excerpt('a'*5000)),1200)
 if __name__=='__main__':unittest.main()

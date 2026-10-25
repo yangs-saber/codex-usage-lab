@@ -45,7 +45,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.valid_host():self.send_error(403);return
         path=urlparse(self.path).path
-        if path=='/health':self.send({'app':'codex-usage-lab','version':'0.4.0','loading':STATE.get('loading',True)})
+        if path=='/health':self.send({'app':'codex-usage-lab','version':'0.5.0','loading':STATE.get('loading',True)})
         elif path=='/api/usage':
             with LOCK:self.send({**STATE,'annotations':notes(),'csrf':CSRF})
         elif path=='/':self.send((ROOT/'index.html').read_bytes(),kind='text/html; charset=utf-8')

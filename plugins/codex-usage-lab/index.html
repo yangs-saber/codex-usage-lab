@@ -32,7 +32,7 @@
             target="_blank"
             rel="noreferrer"
             >GitHub ↗</a
-          ><span class="version">v0.4.0</span>
+          ><span class="version">v0.5.0</span>
         </div>
       </aside>
       <main>
@@ -107,9 +107,9 @@
             </article>
             <article class="metric">
               <div class="metric-head">
-                估算 Credits <span class="metric-icon">◈</span>
+                模型请求 <span class="metric-icon">◈</span>
               </div>
-              <div class="metric-value" id="credits">—</div>
+              <div class="metric-value" id="requests">—</div>
               <div class="metric-foot" id="pricing-note">
                 按日期标注的费率折算
               </div>
@@ -243,42 +243,65 @@
                 ×
               </button>
             </div>
-            <div class="table-scroll" id="turn-table"></div>
+            <p class="panel-note">
+              每一项对应你发起的一轮交互。先看消息摘录和本轮总量，展开再看详情；序号按本机保留记录排列。
+            </p>
+            <div class="turn-list" id="turn-table"></div>
           </section>
-          <section class="panel" id="calls-panel" hidden>
+          <section class="turn-expanded" id="calls-panel" hidden>
             <div class="panel-head">
               <div>
-                <h2>逐次调用</h2>
+                <h3 id="selected-turn-title">本轮用量</h3>
                 <p id="duration"></p>
               </div>
               <button
                 class="icon-button"
                 id="close-calls"
-                aria-label="关闭逐次调用"
+                aria-label="收起本轮详情"
               >
                 ×
               </button>
             </div>
-            <form id="note-form" class="note-form">
-              <label
-                >任务类别<input
-                  id="task-label"
-                  maxlength="160"
-                  placeholder="例如：代码修复" /></label
-              ><label
-                >本轮结果<select id="outcome">
-                  <option value="unrated">尚未评价</option>
-                  <option value="success">满意 / 已完成</option>
-                  <option value="partial">部分完成</option>
-                  <option value="failed">未完成</option>
-                </select></label
-              ><button class="button" type="submit">保存标注</button
-              ><span id="save-status" role="status"></span>
-            </form>
-            <div class="table-scroll" id="call-table"></div>
-            <button class="text-button more" id="more-calls" hidden>
-              显示更多调用
-            </button>
+            <div class="message-context">
+              <span class="muted">你当时发的消息 · 本机摘录</span>
+              <pre id="turn-message"></pre>
+              <p class="muted">
+                最多显示 1,200 字符，仅用于辨认这一轮；不调用模型生成摘要。
+              </p>
+            </div>
+            <div id="turn-breakdown" class="turn-breakdown"></div>
+            <details id="technical-details" class="technical-details">
+              <summary id="technical-summary">技术明细</summary>
+              <p class="panel-note">
+                一次用户消息可能触发多次模型请求。下表属于当前这一轮，合计对应本轮用量。缓存已包含在输入中，不能重复相加。
+              </p>
+              <div class="table-scroll" id="call-table"></div>
+              <button class="text-button more" id="more-calls" hidden>
+                显示更多请求
+              </button>
+            </details>
+            <details class="note-options">
+              <summary>可选：给这一轮分类或评价</summary>
+              <p class="panel-note">
+                仅用于同类任务比较；不填写也不影响用量统计。
+              </p>
+              <form id="note-form" class="note-form">
+                <label
+                  >任务类别<input
+                    id="task-label"
+                    maxlength="160"
+                    placeholder="例如：代码修复" /></label
+                ><label
+                  >本轮结果<select id="outcome">
+                    <option value="unrated">尚未评价</option>
+                    <option value="success">满意 / 已完成</option>
+                    <option value="partial">部分完成</option>
+                    <option value="failed">未完成</option>
+                  </select></label
+                ><button class="button" type="submit">保存标注</button
+                ><span id="save-status" role="status"></span>
+              </form>
+            </details>
           </section>
           <footer>
             <details>

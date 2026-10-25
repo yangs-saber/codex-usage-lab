@@ -1,6 +1,6 @@
 {
   "name": "codex-usage-lab",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "本机 Token 与估算 Credits，逐轮追踪、趋势分析和任务对比",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",

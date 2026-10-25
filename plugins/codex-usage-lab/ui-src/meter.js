@@ -1,6 +1,6 @@
 import { App } from "@modelcontextprotocol/ext-apps";
 const app = new App(
-  { name: "Codex 实时用量", version: "0.4.0" },
+  { name: "Codex 实时用量", version: "0.5.0" },
   {},
   { autoResize: true },
 );
@@ -76,7 +76,7 @@ function paint(d) {
   $("rows").innerHTML = d.rows
     .map(
       (r) =>
-        `<tr><td>${esc(new Date(r.first).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }))}<small>${esc(r.models.join(" / "))} · ${r.calls} 次调用</small></td><td>${fmt(r.tokens)}</td><td>${credits(r)}</td></tr>`,
+        `<tr><td><span>${esc((r.timing?.message || "用户消息摘录不可用").replace(/\s+/g," ").slice(0,72))}</span><small>${esc(new Date(r.first).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }))}</small><small>${esc(r.models.join(" / "))} · ${r.calls} 次调用</small></td><td>${fmt(r.tokens)}</td><td>${credits(r)}</td></tr>`,
     )
     .join("");
   $("info").textContent =
