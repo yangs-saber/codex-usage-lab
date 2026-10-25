@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>实时用量</title
+  ><style>
+    :root {
+      color-scheme: light dark;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 14px;
+      font:
+        13px -apple-system,
+        BlinkMacSystemFont,
+        "PingFang SC",
+        sans-serif;
+      color: var(--color-text-primary, #eeebf6);
+      background: var(--color-background-primary, #16151c);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    h1 {
+      font-size: 15px;
+      margin: 0;
+    }
+    #compact {
+      font-size: 11px;
+      margin-top: 5px;
+      color: #b0a0fa;
+    }
+    button,
+    select {
+      font: inherit;
+      border: 1px solid #393343;
+      border-radius: 8px;
+      padding: 7px 10px;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+    }
+    select {
+      width: 100%;
+      margin: 16px 0 7px;
+    }
+    option {
+      background: #211e2c;
+    }
+    #status {
+      font-size: 11px;
+      color: #b0a0fa;
+    }
+    #title {
+      font-size: 13px;
+      margin: 16px 0;
+      line-height: 1.6;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .card {
+      background: #211e2c;
+      border-radius: 9px;
+      padding: 12px;
+      color: #eeebf6;
+    }
+    .label {
+      font-size: 11px;
+      color: #b0a8c0;
+    }
+    .value {
+      font-size: 22px;
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    small {
+      display: block;
+      font-size: 10px;
+      color: #a09aac;
+      margin-top: 5px;
+    }
+    #info,
+    #note,
+    #help {
+      font-size: 11px;
+      line-height: 1.7;
+      color: #a09aac;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    td,
+    th {
+      padding: 10px 3px;
+      text-align: left;
+      border-bottom: 1px solid #34303d;
+    }
+    th {
+      font-weight: 400;
+      color: #a09aac;
+    }
+    td:not(:first-child) {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .scroll {
+      max-height: 350px;
+      overflow: auto;
+    }
+    #error {
+      color: #edab8b;
+      line-height: 1.6;
+    }
+    #actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .card {
+      border: 1px solid #393343;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .value {
+      font-size: 25px;
+      font-weight: 550;
+      letter-spacing: -0.7px;
+    }
+    .label {
+      font-size: 10px;
+    }
+    button {
+      border-radius: 7px;
+    }
+    #compact {
+      letter-spacing: 0.2px;
+    }
+    .scroll {
+      margin-top: 16px;
+    }
+    header {
+      padding-bottom: 12px;
+      border-bottom: 1px solid #34303d;
+    }
+  </style>
+  <header>
+    <div>
+      <h1>◈ 实时用量</h1>
+      <div id="compact">本对话 Token · 估算 Credits</div>
+    </div>
+    <button id="collapse">收起</button>
+  </header>
+  <div id="body">
+    <select id="thread" aria-label="跟踪对话">
+      <option value="">选择要跟踪的对话…</option>
+    </select>
+    <div id="help">
+      宿主未提供可靠的当前对话编号时，请选一次；不会把“最新活跃对话”冒充当前对话。
+    </div>
+    <div id="actions">
+      <span id="status">连接插件中…</span><button id="refresh">刷新</button>
+    </div>
+    <p id="error"></p>
+    <div id="values" hidden>
+      <h2 id="title"></h2>
+      <div class="cards">
+        <div class="card">
+          <div class="label">整个对话 · Token</div>
+          <div class="value" id="total">—</div>
+        </div>
+        <div class="card">
+          <div class="label">整个对话 · ≈ Credits</div>
+          <div class="value" id="credits">—</div>
+        </div>
+        <div class="card">
+          <div class="label">最近一轮 · Token</div>
+          <div class="value" id="lastTokens">—</div>
+        </div>
+        <div class="card">
+          <div class="label">最近一轮 · ≈ Credits</div>
+          <div class="value" id="lastCredits">—</div>
+        </div>
+      </div>
+      <span id="cache" hidden></span>
+      <p id="info"></p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>轮次 / 模型</th>
+              <th>Token</th>
+              <th>≈ Credits</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p id="note"></p>
+    </div>
+  </div>
+  <script>
+    /*BUNDLE*/
+  </script>
+</html>

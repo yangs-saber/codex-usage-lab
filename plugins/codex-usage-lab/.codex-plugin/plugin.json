@@ -1,0 +1,18 @@
+{
+  "name": "codex-usage-lab",
+  "version": "0.4.0",
+  "description": "本机 Token 与估算 Credits，逐轮追踪、趋势分析和任务对比",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "requires_local_executor": true,
+  "interface": {
+    "displayName": "用量实验室",
+    "shortDescription": "逐轮 Token、Credits 与任务模型对比",
+    "brandColor": "#A99AF6",
+    "defaultPrompt": [
+      "打开用量实验室",
+      "查看这次对话每一轮的消耗",
+      "比较已标注任务在不同模型下的用量"
+    ]
+  }
+}

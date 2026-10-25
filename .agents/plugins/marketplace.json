@@ -1,0 +1,20 @@
+{
+  "name": "ekko-local-tools",
+  "interface": {
+    "displayName": "Ekko 本地工具"
+  },
+  "plugins": [
+    {
+      "name": "codex-usage-lab",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-usage-lab"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

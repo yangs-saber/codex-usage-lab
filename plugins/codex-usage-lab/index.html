@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>用量实验室 · Codex Usage Lab</title>
+    <link rel="stylesheet" href="/dashboard.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="用量实验室首页"
+          ><span class="brand-icon">◈</span
+          ><span>用量实验室<small>CODEX USAGE LAB</small></span></a
+        ><span class="nav-label">工作空间</span>
+        <nav aria-label="主导航">
+          <button class="nav active" data-view="overview">
+            <span>▦</span>用量总览</button
+          ><button class="nav" data-view="threads">
+            <span>▤</span>对话明细</button
+          ><button class="nav" data-view="models"><span>◉</span>模型分析</button
+          ><button class="nav" data-view="comparison">
+            <span>⇄</span>任务对比
+          </button>
+        </nav>
+        <div class="side-bottom">
+          <span class="local-dot"></span> 仅在本机运行
+          <p>你的记录，留在你的设备。</p>
+          <a
+            href="https://github.com/yangs-saber/codex-usage-lab"
+            target="_blank"
+            rel="noreferrer"
+            >GitHub ↗</a
+          ><span class="version">v0.4.0</span>
+        </div>
+      </aside>
+      <main>
+        <header class="topbar">
+          <div class="breadcrumb">
+            工作空间 <span>/</span> <b id="breadcrumb">用量总览</b>
+          </div>
+          <div class="top-actions">
+            <span id="status" role="status">连接中…</span
+            ><button class="icon-button" id="theme" aria-label="切换浅色或深色">
+              ◐
+            </button>
+          </div>
+        </header>
+        <div class="content">
+          <div id="demo-banner" class="demo-banner" hidden>
+            演示模式 · 以下为虚构数据，不读取本机记录。<a href="/"
+              >返回本机数据 ↗</a
+            >
+          </div>
+          <div class="page-title">
+            <div>
+              <div class="eyebrow">A LITTLE MORE CLARITY</div>
+              <h1 id="page-title">
+                看清每一次消耗<span class="title-dot">.</span>
+              </h1>
+              <p id="subtitle">从一次调用，到一个项目。让用量有迹可循。</p>
+            </div>
+            <div class="page-actions">
+              <button id="refresh" class="button">↻ <span>刷新</span></button
+              ><button id="export" class="button primary">↓ 导出 CSV</button>
+            </div>
+          </div>
+          <nav class="mobile-nav" aria-label="移动端导航">
+            <button data-view="overview">总览</button
+            ><button data-view="threads">对话</button
+            ><button data-view="models">模型</button
+            ><button data-view="comparison">任务对比</button>
+          </nav>
+          <div class="filterbar">
+            <div class="segmented" role="group" aria-label="时间范围">
+              <button data-period="today">今天</button
+              ><button data-period="week" class="active">近 7 天</button
+              ><button data-period="all">全部</button>
+            </div>
+            <label class="sr-only" for="project">项目</label
+            ><select id="project">
+              <option value="all">所有项目</option></select
+            ><label class="sr-only" for="model">模型</label
+            ><select id="model">
+              <option value="all">所有模型</option></select
+            ><label class="search"
+              ><span>⌕</span
+              ><input
+                id="search"
+                type="search"
+                placeholder="搜索对话…"
+                aria-label="搜索对话"
+            /></label>
+          </div>
+          <div id="error" class="error" role="alert" hidden></div>
+          <section class="metrics" aria-label="用量摘要">
+            <article class="metric">
+              <div class="metric-head">
+                总 Token <span class="metric-icon">↗</span>
+              </div>
+              <div class="metric-value" id="total">—</div>
+              <div class="metric-foot">
+                <span class="mini-dot purple"></span
+                ><span id="total-sub">等待本机记录</span>
+              </div>
+            </article>
+            <article class="metric">
+              <div class="metric-head">
+                估算 Credits <span class="metric-icon">◈</span>
+              </div>
+              <div class="metric-value" id="credits">—</div>
+              <div class="metric-foot" id="pricing-note">
+                按日期标注的费率折算
+              </div>
+            </article>
+            <article class="metric">
+              <div class="metric-head">
+                输入缓存命中率 <span class="metric-icon">⟳</span>
+              </div>
+              <div class="metric-value" id="cache">—</div>
+              <div class="metric-foot" id="cache-sub">缓存输入 / 全部输入</div>
+            </article>
+            <article class="metric">
+              <div class="metric-head">
+                活跃对话 <span class="metric-icon">▤</span>
+              </div>
+              <div class="metric-value" id="chats">—</div>
+              <div class="metric-foot" id="chat-sub">— 轮用户交互</div>
+            </article>
+          </section>
+          <div class="view" id="view-overview">
+            <div class="chart-grid">
+              <section class="panel trend-panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>用量趋势</h2>
+                    <p>每天的 Token 消耗</p>
+                  </div>
+                  <span class="legend"
+                    ><i class="mini-dot purple"></i> 总 Token</span
+                  >
+                </div>
+                <div
+                  id="trend"
+                  class="trend"
+                  role="img"
+                  aria-label="每日 Token 趋势图"
+                ></div>
+              </section>
+              <section class="panel composition-panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Token 构成</h2>
+                    <p>输入与输出，一目了然</p>
+                  </div>
+                </div>
+                <div class="donut-wrap">
+                  <div class="donut" id="donut">
+                    <div class="donut-center">
+                      <small>总 Token</small><strong id="donut-total">—</strong>
+                    </div>
+                  </div>
+                </div>
+                <div id="composition" class="composition"></div>
+              </section>
+            </div>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>最近的对话</h2>
+                  <p>每一项工作，都有它的用量轨迹</p>
+                </div>
+                <button class="text-button" data-view="threads">
+                  查看全部 ↗
+                </button>
+              </div>
+              <div class="table-scroll" id="recent-table"></div>
+            </section>
+            <div class="bottom-grid">
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>项目分布</h2>
+                  <span class="muted">按 Token</span>
+                </div>
+                <div id="projects" class="rank-list"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>模型分布</h2>
+                  <span class="muted">按 Token</span>
+                </div>
+                <div id="model-ranks" class="rank-list"></div>
+              </section>
+            </div>
+          </div>
+          <div class="view" id="view-threads" hidden>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>对话明细</h2>
+                <span id="thread-count" class="muted"></span>
+              </div>
+              <div class="table-scroll" id="all-table"></div>
+            </section>
+          </div>
+          <div class="view" id="view-models" hidden>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>模型用量</h2>
+                  <p>按调用记录汇总，不代表模型能力排名</p>
+                </div>
+              </div>
+              <div class="table-scroll" id="model-table"></div>
+            </section>
+          </div>
+          <div class="view" id="view-comparison" hidden>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>同类任务，放在一起看</h2>
+                  <p>在轮次明细标注任务和结果后，对比相似工作的消耗。</p>
+                </div>
+              </div>
+              <div class="table-scroll" id="comparison-table"></div>
+              <p class="panel-note">
+                平均及中位 Credits
+                仅包含完整计价轮次。跨模型轮次进入多个组；结果评价属于整轮，不能归因给单个模型。
+              </p>
+            </section>
+          </div>
+          <section class="panel detail-panel" id="detail" hidden>
+            <div class="panel-head">
+              <div>
+                <div class="eyebrow">CONVERSATION DETAILS</div>
+                <h2 id="detail-title">对话明细</h2>
+              </div>
+              <button
+                class="icon-button"
+                id="close-detail"
+                aria-label="关闭对话明细"
+              >
+                ×
+              </button>
+            </div>
+            <div class="table-scroll" id="turn-table"></div>
+          </section>
+          <section class="panel" id="calls-panel" hidden>
+            <div class="panel-head">
+              <div>
+                <h2>逐次调用</h2>
+                <p id="duration"></p>
+              </div>
+              <button
+                class="icon-button"
+                id="close-calls"
+                aria-label="关闭逐次调用"
+              >
+                ×
+              </button>
+            </div>
+            <form id="note-form" class="note-form">
+              <label
+                >任务类别<input
+                  id="task-label"
+                  maxlength="160"
+                  placeholder="例如：代码修复" /></label
+              ><label
+                >本轮结果<select id="outcome">
+                  <option value="unrated">尚未评价</option>
+                  <option value="success">满意 / 已完成</option>
+                  <option value="partial">部分完成</option>
+                  <option value="failed">未完成</option>
+                </select></label
+              ><button class="button" type="submit">保存标注</button
+              ><span id="save-status" role="status"></span>
+            </form>
+            <div class="table-scroll" id="call-table"></div>
+            <button class="text-button more" id="more-calls" hidden>
+              显示更多调用
+            </button>
+          </section>
+          <footer>
+            <details>
+              <summary id="coverage">数据覆盖与计算口径</summary>
+              <p id="coverage-detail"></p>
+              <p>
+                缓存输入已包含在输入中，推理 Token
+                已包含在输出中。只统计本机保留的逐次记录；不把旧版累计数据、分叉继承历史重复计入。工具独立费用及其他设备记录不在统计内。
+              </p>
+            </details>
+            <div class="footer-bottom">
+              <span>LOCAL FIRST. EVERY TOKEN COUNTS.</span
+              ><span id="rate-note">Credits 为估算，不是账单或套餐额度。</span>
+            </div>
+          </footer>
+        </div>
+      </main>
+    </div>
+    <script src="/dashboard.js" defer></script>
+  </body>
+</html>

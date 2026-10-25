@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "usage_lab": {
+      "command": "python3",
+      "args": [
+        "${PLUGIN_ROOT}/mcp_server.py"
+      ]
+    }
+  }
+}
