@@ -1,0 +1,13 @@
+{
+  "description": "每轮回复结束后，只读当前会话日志，在 Codex 的 Hook 提示中显示一行用量；不发起模型请求、不打开网页、不修改聊天。",
+  "hooks": {
+    "Stop": [{
+      "hooks": [{
+        "type": "command",
+        "command": "python3 \"${PLUGIN_ROOT}/hooks/stop.py\"",
+        "timeout": 10,
+        "statusMessage": "统计本轮用量"
+      }]
+    }]
+  }
+}

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "codex-usage-lab",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "本机 Token 与估算 Credits，逐轮追踪、趋势分析和任务对比",
   "license": "MIT",
   "extensions": {
@@ -12,11 +12,12 @@
         "shortDescription": "逐轮 Token、Credits 与任务模型对比",
         "brandColor": "#A99AF6",
         "defaultPrompt": [
+          "开启每轮自动用量提示",
           "打开用量实验室",
-          "查看这次对话每一轮的消耗",
-          "比较已标注任务在不同模型下的用量"
+          "查看这次对话每一轮的消耗"
         ]
-      }
+      },
+      "hooks": "./hooks/hooks.json"
     }
   }
 }

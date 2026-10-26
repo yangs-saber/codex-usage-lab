@@ -1,7 +1,7 @@
 import json, os, subprocess, sys, time, urllib.request
 from pathlib import Path
 from dataclasses import dataclass
-__version__='0.5.0'
+__version__='0.6.0'
 ROOT=Path(__file__).resolve().parent
 PORT=int(os.environ.get('USAGE_LAB_PORT','8770'));URL=f'http://127.0.0.1:{PORT}'
 @dataclass
@@ -11,7 +11,7 @@ class Tool:
     input_schema:dict
 QUERY={'type':'object','properties':{'group_by':{'type':'string','enum':['thread','turn','call','model','project','comparison']},'thread_id':{'type':'string'},'model':{'type':'string'},'project_id':{'type':'string'},'task':{'type':'string'},'search':{'type':'string'},'since':{'type':'string','description':'YYYY-MM-DD Asia/Shanghai'},'until':{'type':'string'},'limit':{'type':'integer','minimum':1,'maximum':100},'offset':{'type':'integer','minimum':0}},'additionalProperties':False}
 ANNOTATE={'type':'object','properties':{'thread_id':{'type':'string'},'turn_id':{'type':'string'},'task':{'type':'string','description':'User-chosen task label; no automatic inference'},'outcome':{'type':'string','enum':['unrated','success','partial','failed']}},'required':['thread_id','turn_id','task','outcome'],'additionalProperties':False}
-TOOL_SPECS=[Tool('open_usage_dashboard','Open a live token/estimated-credit meter inside the chat panel. Optional thread_id binds a known conversation; no ID shows a selector. Automatic refresh needs no model prompts.',{'type':'object','properties':{'thread_id':{'type':'string'}},'additionalProperties':False}),Tool('query_usage','Read bounded local usage totals by thread, turn, call, model, project, or task/model comparison. Credits are estimates, not bills. Missing logs and unpriced calls are explicit.',QUERY),Tool('annotate_usage_turn','Save the user’s task label and outcome for a specific turn. Only use when the user requests or supplies this annotation.',ANNOTATE)]
+TOOL_SPECS=[Tool('open_usage_dashboard','Request an optional usage dashboard. Native MCP App rendering depends on host support; otherwise return the local page URL. Optional thread_id binds a known conversation; no ID shows a selector. Automatic refresh needs no model prompts.',{'type':'object','properties':{'thread_id':{'type':'string'}},'additionalProperties':False}),Tool('query_usage','Read bounded local usage totals by thread, turn, call, model, project, or task/model comparison. Credits are estimates, not bills. Missing logs and unpriced calls are explicit.',QUERY),Tool('annotate_usage_turn','Save the user’s task label and outcome for a specific turn. Only use when the user requests or supplies this annotation.',ANNOTATE)]
 
 def validate_schema(schema,a):
     if not isinstance(a,dict):raise ValueError('Expected object')
